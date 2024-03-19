@@ -1,0 +1,115 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Form..Create(BaseForm)
+Gui.Form..Caption("Maintenance Table for 6961")
+Gui.Form..Size(421,146)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..AlwaysOnTop(False)
+Gui.Form..FontName("Tahoma")
+Gui.Form..FontSize(8.25)
+Gui.Form..ControlBox(True)
+Gui.Form..MaxButton(True)
+Gui.Form..MinButton(True)
+Gui.Form..MousePointer(0)
+Gui.Form..Moveable(True)
+Gui.Form..Sizeable(True)
+Gui.Form..ShowInTaskBar(True)
+Gui.Form..TitleBar(True)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form.GsgcMTN.Create(GsGridControl)
+Gui.Form.GsgcMTN.Enabled(True)
+Gui.Form.GsgcMTN.Visible(True)
+Gui.Form.GsgcMTN.Zorder(0)
+Gui.Form.GsgcMTN.Size(401,98)
+Gui.Form.GsgcMTN.Position(9,11)
+Gui.Form.GsgcMTN.Event(CellValueChanged,GsgcMTN_CellValueChanged)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+'ARC 6961 
+'Cus: Cryomech 
+'	Nam Le, Nov 2022
+
+'BUSINESS CASE: The customer needs an existing Payroll Export from ARC 6235 modified to match the requirements of their new Payroll provider.
+'MOD from 6235
+
+'This script manages static values for this ARC
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.Try
+	Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+	
+	f.Intrinsic.Control.CallSub(GetData)
+	gui.Form..Show
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription, v.Ambient.ErrorNumber)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.GetData.Start
+f.Intrinsic.Control.Try
+	f.ODBC.Connection!Con.OpenCompanyConnection
+		f.Intrinsic.Control.If(v.DataTable.dtMTN.Exists)
+			f.Data.DataTable.Close("dtMTN")
+		f.Intrinsic.Control.EndIf
+		f.Data.DataTable.CreateFromSQL("dtMTN", "con", "select RTRIM(CLIENTID) CLIENTID, RTRIM(STATUS) STATUS, RTRIM(ACTIVITY) ACTIVITY from GCG_6961_STATIC", true)
+	f.ODBC.Connection!Con.Close
+	
+	gui.Form.GsgcMTN.AddGridviewFromDatatable("gvMTN", "dtMTN")
+	
+	gui.Form.GsgcMTN.SetGridviewProperty("gvMTN", v.Enum.GridViewPropertyNames!Editable,True)
+	gui.Form.GsgcMTN.SetGridviewProperty("gvMTN", v.Enum.GridViewPropertyNames!ReadOnly,False)
+	gui.Form.GsgcMTN.SetGridviewProperty("gvMTN", v.Enum.GridViewPropertyNames!ColumnAutoWidth, True)
+	
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "CLIENTID", v.Enum.ColumnPropertyNames!HeaderFontBold, True)
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "STATUS", v.Enum.ColumnPropertyNames!HeaderFontBold, True)
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "ACTIVITY", v.Enum.ColumnPropertyNames!HeaderFontBold, True)
+	
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "CLIENTID", v.Enum.ColumnPropertyNames!HeaderHAlignment, True)
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "STATUS", v.Enum.ColumnPropertyNames!HeaderHAlignment, True)
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "ACTIVITY", v.Enum.ColumnPropertyNames!HeaderHAlignment, True)
+	
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "CLIENTID", v.Enum.ColumnPropertyNames!CellHAlignment, True)
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "STATUS", v.Enum.ColumnPropertyNames!CellHAlignment, True)
+	gui.Form.GsgcMTN.SetColumnProperty("gvMTN", "ACTIVITY", v.Enum.ColumnPropertyNames!CellHAlignment, True)
+	
+	gui.Form.GsgcMTN.MainView("gvMTN")
+	
+f.Intrinsic.Control.Catch
+
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription, v.Ambient.ErrorNumber)
+f.Intrinsic.Control.EndTry
+Program.Sub.GetData.End
+
+Program.Sub.Form_UnLoad.Start
+f.Intrinsic.Control.Try
+	f.Intrinsic.Control.End
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription, v.Ambient.ErrorNumber)
+f.Intrinsic.Control.EndTry
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.GsgcMTN_CellValueChanged.Start
+f.Intrinsic.Control.Try
+	v.Local.sTemp.Declare(String)
+	v.Local.sSQL.Declare(String)
+	
+	gui.Form.GsgcMTN.GetCellValueByColumnName("gvMTN", v.Args.Column, v.Args.RowIndex, v.Local.sTemp)
+	f.Intrinsic.String.Build("update GCG_6961_STATIC set {0} = '{1}'", v.Args.Column, v.Local.sTemp, v.Local.sSQL)
+	f.ODBC.Connection!Con.OpenCompanyConnection
+		f.ODBC.Connection!Con.Execute(v.Local.sSQL)
+	f.ODBC.Connection!Con.Close
+	
+	f.Intrinsic.UI.Msgbox("Saved.")
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription, v.Ambient.ErrorNumber)
+f.Intrinsic.Control.EndTry
+Program.Sub.GsgcMTN_CellValueChanged.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$nle$}$20221103153825235$}$kjzCRYkA6UEoRnCwndYnRSKT8t/BDwvKYWQcIdhjYjJ/fpO1nSzc/feoB6O82bSw
+Program.Sub.Comments.End
